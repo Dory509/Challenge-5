@@ -5,11 +5,12 @@ let nextId = JSON.parse(localStorage.getItem("nextId"));
 // Todo: create a function to generate a unique task id
 function generateTaskId() {
     return Math.floor(Math.random() * 1000)
+
 }
 
 // Todo: create a function to create a task card
 function createTaskCard(task) {
-    var taskCard = `<div class="card task-card p-2 m-3"  id="${task.id}" style="width: 18rem;">
+    var taskCard = `<div class="card task-card draggable p-2 m-3"  id="${task.id}" style="width: 18rem;">
   <div class="card-body">
     <h5 class="card-title">Title:${task.title}</h5>
     <h6 class="card-subtitle mb-2 text-body-secondary">Description: ${task.description}</h6>
@@ -28,18 +29,33 @@ function renderTaskList() {
     $("#done-cards").html("")
 
     previousTaskList.forEach(element => {
-        var taskCard = createTaskCard(element)
+        const taskCard = createTaskCard(element)
         if (element.status == "to-do") {
             $("#todo-cards").append(taskCard)
         }
-        else if (element.staus == "in-progress") {
+        else if (element.status == "in-progress") {
             $("#in-progress-cards").append(taskCard)
         }
-        else {
+        else if (task.status == "done"){
             $("#done-cards").append(taskCard)
+        } 
+        else{
+            console.error("unknown task status:", task)
         }
     });
 }
+    // Make the taks draggable
+    $(".draggable").draggable ({ 
+        opacity:0.7,
+        zIndex:100,
+        helper: function(e){
+            const original = $(e.target).hasClass("ui-draggable") ? $(e.target) : $(e.target).closest(".ui-draggable");
+            return original.clone().css({
+                maxWidth: original.outerWidth()
+            })
+        }
+    });
+
 
 // Todo: create a function to handle adding a new task
 function handleAddTask(event) {
@@ -63,8 +79,8 @@ function handleAddTask(event) {
 // Todo: create a function to handle deleting a task
 function handleDeleteTask(event) {
     let taskList = JSON.parse(localStorage.getItem("taskboard")) ||[]
-    const id = event.target.closest('.task-card').attr('id');
-    taskList = taskList.filter((task) => task.id !== id);
+    const id = $(event.target).closest('.task-card').attr('id');
+    taskList = taskList.filter((task) => task.id !== parseInt(id,10));
     localStorage.setItem("taskboard", JSON.stringify(taskList));
     renderTaskList();
 }
@@ -75,7 +91,7 @@ function handleDrop(event, ui) {
     const newState = $(this).closest('.lane').attr('id');
     console.log(newState, id, "UI",ui,taskList)
     taskList = taskList.map((task) => {
-        return task.id === id ? { ...task, state: newState } : task
+        return task.id ===  parseInt(id,10) ? { ...task, status: newState } : task;
     }
     );
     console.log(taskList)
@@ -88,15 +104,17 @@ $(document).ready(function () {
     $("#saveTask").on("click", handleAddTask)
     renderTaskList()
     // Make task lanes sortable
-    $('.lane .card-body').sortable({
-        connectWith: '.lane .card-body',
-        receive: handleDrop,
-    }).disableSelection();
+    $('.lane').droppable ({
+       accept:'.draggable',
+       drop:handleDrop
+    })
 
     // Make a date picker for task date
-    $('#taskDate').datepicker({ dateFormat: 'yy-mm-dd' });
+    $('#taskDate').datepicker({ dateFormat: 'mm-dd-yyyy' });
 
 });
+
+
 $(document).on('click', '.delete-task', handleDeleteTask);
 
 
