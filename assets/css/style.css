@@ -14,3 +14,7 @@ body {
 .task-card:hover {
   cursor: grab;
 }
+
+.bg-light {
+  min-height: 1500px;
+}
